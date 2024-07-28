@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function Filter({ persons, setPersons }) {
+function Filter({ persons, setSearchTerm }) {
   function filteredPersons(inputValue) {
     inputValue = inputValue.toLowerCase()
     return persons.filter(
@@ -13,7 +13,7 @@ function Filter({ persons, setPersons }) {
       <input
         type='text'
         onChange={(e) => {
-          setPersons(filteredPersons(e.target.value))
+          setSearchTerm(filteredPersons(e.target.value))
         }}
       />
     </div>
@@ -95,6 +95,7 @@ function App() {
   ])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
+  const [searchTerm, setSearchTerm] = useState(persons)
 
   function handleClick(event) {
     event.preventDefault()
@@ -115,7 +116,7 @@ function App() {
   return (
     <div>
       <h2>Phonebook</h2>
-      <Filter persons={persons} setPersons={setPersons} />
+      <Filter persons={persons} setSearchTerm={setSearchTerm} />
       <h3>Add a new</h3>
       <PersonForm
         newName={newName}
@@ -125,7 +126,7 @@ function App() {
         handleClick={handleClick}
       />
       <h2>Numbers</h2>
-      <Persons persons={persons} />
+      <Persons persons={searchTerm} />
     </div>
   )
 }
