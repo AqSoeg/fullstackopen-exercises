@@ -73,20 +73,19 @@ function PersonForm({
   )
 }
 
-function Persons({ persons, setSearchTerm }) {
+function Persons({ persons, setPersons, setSearchTerm }) {
   function deletePersonOf(id) {
     console.log(`delete id: ${id}`)
     const target = persons.find((person) => person.id == id)
     if (
       window.confirm(`Are you sure to delete ${target.name}'s phone number?`)
     ) {
-      phonebookService
-        .remove(id)
-        .then(() =>
-          phonebookService
-            .getAll()
-            .then((returnedData) => setSearchTerm(returnedData))
-        )
+      phonebookService.remove(id).then(() =>
+        phonebookService.getAll().then((returnedData) => {
+          setSearchTerm(returnedData)
+          setPersons(returnedData)
+        })
+      )
     }
   }
 
@@ -104,11 +103,17 @@ function Persons({ persons, setSearchTerm }) {
   )
 }
 
+function Notification({ message }) {
+  if (message === null) return null
+  return <div className='error'>{message}</div>
+}
+
 function App() {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [searchTerm, setSearchTerm] = useState(persons)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     phonebookService.getAll().then((returnedData) => {
@@ -120,8 +125,7 @@ function App() {
   function handleClick(event) {
     event.preventDefault()
 
-    console.log(newName)
-    console.log(newNumber)
+    console.log(newName + ' ' + newNumber)
     const names = persons.map((item) => item.name)
     const newPerson = { name: newName, number: newNumber }
 
@@ -132,19 +136,25 @@ function App() {
         )
       ) {
         const targetId = persons.find((person) => person.name == newName).id
-        phonebookService.update(targetId, newPerson).then(() => {
-          const changedPersons = persons.map((item) => {
-            if (item.name === newName) {
-              return newPerson
-            } else {
-              return item
-            }
+        phonebookService
+          .update(targetId, newPerson)
+          .then(() => {
+            const changedPersons = persons.map((item) => {
+              if (item.name === newName) {
+                return newPerson
+              } else {
+                return item
+              }
+            })
+            setPersons(changedPersons)
           })
-          setPersons(changedPersons)
-          setSearchTerm(changedPersons)
-        })
+          .catch((error) =>
+            setErrorMessage(
+              `Information of ${newName} has already been removed from server`
+            )
+          )
       } else {
-        alert(`${newName} is already added to phonebook`)
+        setErrorMessage(`${newName} is already added to phonebook`)
       }
     } else {
       phonebookService.create(newPerson).then((returnedData) => {
@@ -152,6 +162,7 @@ function App() {
         setSearchTerm(searchTerm.concat(newPerson))
         setNewName('')
         setNewNumber('')
+        setErrorMessage(`Added ${newName}`)
       })
     }
   }
@@ -159,6 +170,7 @@ function App() {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={errorMessage} />
       <Filter persons={persons} setSearchTerm={setSearchTerm} />
       <h3>Add a new</h3>
       <PersonForm
@@ -169,7 +181,11 @@ function App() {
         handleClick={handleClick}
       />
       <h2>Numbers</h2>
-      <Persons persons={searchTerm} setSearchTerm={setSearchTerm} />
+      <Persons
+        persons={searchTerm}
+        setPersons={setPersons}
+        setSearchTerm={setSearchTerm}
+      />
     </div>
   )
 }
